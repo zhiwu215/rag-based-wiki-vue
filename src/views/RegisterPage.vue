@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { warmup } from '@/api/auth'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -11,6 +12,17 @@ const username = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
+const warmingUp = ref(true)
+
+onMounted(async () => {
+  try {
+    await warmup()
+  } catch {
+    // 预热失败不影响正常使用
+  } finally {
+    warmingUp.value = false
+  }
+})
 
 async function handleRegister() {
   if (!username.value || !password.value || !confirmPassword.value) {
@@ -77,11 +89,11 @@ async function handleRegister() {
           <el-button
             type="primary"
             size="large"
-            :loading="loading"
+            :loading="loading || warmingUp"
             style="width: 100%"
             native-type="submit"
           >
-            注册
+            {{ warmingUp ? '正在唤醒服务...' : '注册' }}
           </el-button>
         </el-form-item>
       </el-form>
